@@ -104,10 +104,9 @@ from robosuite.utils.input_utils import input2action
 from robosuite.wrappers import VisualizationWrapper
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
-    parser.add_argument("--environment", type=str, default="Lift")
-    parser.add_argument("--robots", nargs="+", type=str, default="Panda", help="Which robot(s) to use in the env")
+    parser.add_argument("--environment", type=str, default="PickInPlace")
+    parser.add_argument("--robots", nargs="+", type=str, default="IIWA", help="Which robot(s) to use in the env")
     parser.add_argument(
         "--config", type=str, default="single-arm-opposed", help="Specified environment configuration if necessary"
     )
@@ -154,7 +153,7 @@ if __name__ == "__main__":
         ignore_done=True,
         use_camera_obs=False,
         reward_shaping=True,
-        control_freq=20,
+        control_freq=30,
         hard_reset=False,
     )
 

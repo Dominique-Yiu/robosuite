@@ -47,6 +47,8 @@ class TableArena(Arena):
             self.table_body.find("./geom[@name='table_leg4_visual']"),
         ]
 
+        self.target_cylinder = self.table_body.find("./site[@name='target_cylinder']")
+
         self.configure_location()
 
     def configure_location(self):

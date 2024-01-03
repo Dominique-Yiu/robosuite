@@ -1,0 +1,10 @@
+<mujoco model="mug with balls">
+  <include file="mug.xml"/>
+  <size nconmax="1000" njmax="3000"/>
+  <worldbody>
+    <light pos="0 0 1" diffuse=".3 .3 .3"/>
+    <composite type="particle" count="5 5 5" spacing="0.011" offset=".005 .003 .15">
+      <geom size=".005" rgba=".8 .2 .1 1" solref=".005 1"/>
+    </composite>
+  </worldbody>
+</mujoco>

@@ -21,7 +21,7 @@ class IIWA(ManipulatorModel):
 
     @property
     def default_gripper(self):
-        return "Robotiq140Gripper"
+        return "Robotiq85Gripper"
 
     @property
     def default_controller_config(self):
