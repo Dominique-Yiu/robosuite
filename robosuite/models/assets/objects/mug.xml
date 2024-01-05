@@ -8,14 +8,11 @@
   </asset>
 
   <worldbody>
-    <composite type="particle" count="4 4 4" spacing="0.011" offset=".005 .003 .15">
-      <geom size=".005" rgba=".8 .2 .1 1" solref=".005 1"/>
-    </composite>
     <geom type="plane" size="5 5 .01" rgba="1 1 1 1" material="floor"/>
     <body>
       <freejoint/>
       <body name="object" pos="0 0 0">
-        <!-- <inertial pos="0 0 0" mass="0.01" diaginertia="0.001 0.001 0.001" /> -->
+        <inertial pos="0 0 0" mass="0.01" diaginertia="0.001 0.001 0.001" />
         <geom pos="0 0 0" mesh="mug_obj" type="mesh" euler="1.57 0 0" material="mug_skin" solimp="0.998 0.998 0.001" solref="0.001 1" density="100" friction="0.95 0.5 0.5" conaffinity="0" contype="0"  group="1" condim="4"/>
         <geom type="box" group="0" rgba="0 0 0 0"  size="0.0026 0.00704 0.033" pos="0.0418 0 0.038" euler="0 0 0.0" />
         <geom type="box" group="0" rgba="0 0 0 0"  size="0.0026 0.00704 0.033" pos="0.0398 0.0129 0.038" euler="0 0 0.314"/>
