@@ -3,7 +3,7 @@ A script to collect a batch of human demonstrations.
 
 The demonstrations can be played back using the `playback_demonstrations_from_hdf5.py` script.
 """
-
+current_timestamps = 0
 import argparse
 import datetime
 import json
@@ -22,11 +22,9 @@ from robosuite import load_controller_config
 from robosuite.utils.input_utils import input2action
 from robosuite.wrappers import DataCollectionWrapper, VisualizationWrapper
 
-current_timestamps = 0
-
 
 class EnvRunner:
-    def __init__(self, env, freq=30):
+    def __init__(self, env, freq=20):
         self.env = env
         self.freq = freq
         self.action = None
@@ -53,7 +51,7 @@ class EnvRunner:
             sleep_time = target_interval - elapsed
             if sleep_time > 0:
                 time.sleep(sleep_time)
-            print(f"Frequency: {1 / (time.time() - start_time)}")
+            # print(f"Frequency: {1 / (time.time() - start_time)}")
 
 
 def collect_human_trajectory(env, device, arm, env_configuration):
@@ -74,7 +72,6 @@ def collect_human_trajectory(env, device, arm, env_configuration):
     # ID = 2 always corresponds to agentview
     env.render()
 
-    is_first = True
     env_runner = EnvRunner(env)
     step_thread = threading.Thread(target=env_runner.run_step)
     step_thread.start()
@@ -88,7 +85,7 @@ def collect_human_trajectory(env, device, arm, env_configuration):
     try:
         while True:
             # Set active robot
-
+            print(current_timestamps)
             active_robot = env.robots[0] if env_configuration == "bimanual" else env.robots[arm == "left"]
 
             # Get the newest action
@@ -234,7 +231,7 @@ if __name__ == "__main__":
         type=str,
         default=os.path.join(suite.models.assets_root, "demonstrations"),
     )
-    parser.add_argument("--environment", type=str, default="PickInPlace")
+    parser.add_argument("--environment", type=str, default="Pour")
     parser.add_argument("--robots", nargs="+", type=str, default="IIWA", help="Which robot(s) to use in the env")
     parser.add_argument(
         "--config", type=str, default="single-arm-opposed", help="Specified environment configuration if necessary"
@@ -245,8 +242,8 @@ if __name__ == "__main__":
         "--controller", type=str, default="OSC_POSE", help="Choice of controller. Can be 'IK_POSE' or 'OSC_POSE'"
     )
     parser.add_argument("--device", type=str, default="spacemouse")
-    parser.add_argument("--pos-sensitivity", type=float, default=1.0, help="How much to scale position user inputs")
-    parser.add_argument("--rot-sensitivity", type=float, default=1.0, help="How much to scale rotation user inputs")
+    parser.add_argument("--pos-sensitivity", type=float, default=1.6, help="How much to scale position user inputs")
+    parser.add_argument("--rot-sensitivity", type=float, default=1.6, help="How much to scale rotation user inputs")
     parser.add_argument("--control_freq", type=int, default=30)
     args = parser.parse_args()
 
@@ -306,8 +303,15 @@ if __name__ == "__main__":
     idx = 0
     # collect demonstrations
     while True:
+        current_timestamps = 0
+        print(f"----------------Collected {idx} demonstrations----------------")
         collect_human_trajectory(env, device, args.arm, args.config)
+
+        print(env.ep_directory)
+        if input("Save this demonstration? ([y]/n): ").lower() in {"n", "no"}:
+            env.reset()
+            shutil.rmtree(env.ep_directory)
+            continue
         gather_demonstrations_as_hdf5(tmp_directory, new_dir, env_info)
 
         idx += 1
-        print(f"----------------Collected {idx} demonstrations----------------")

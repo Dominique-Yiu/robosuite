@@ -34,7 +34,7 @@
         <geom type="box" group="0" rgba="0 0 0 0"  size="0.0026 0.00704 0.033" pos="0.0246 -0.0339 0.038" euler="0 0 5.341"/>
         <geom type="box" group="0" rgba="0 0 0 0"  size="0.0026 0.00704 0.033" pos="0.0339 -0.0246 0.038" euler="0 0 5.655"/>
         <geom type="box" group="0" rgba="0 0 0 0"  size="0.0026 0.00704 0.033" pos="0.0398 -0.0129 0.038" euler="0 0 5.969"/>
-        <geom group="0" rgba="0 0 0 0"  type="cylinder" size="0.045 0.0026" pos="0 0 0.0026"/>
+        <geom group="0" rgba="0 0 0 0"  type="cylinder" size="0.045 0.0030" pos="0 0 0.0026"/>
         <body name="handle" pos="0.056 0 0.0395" euler="1.57 0 0">
           <geom type="box" group="0" rgba="0 0 0 0"  size="0.0025 0.00328 0.0100" pos="0.0193 0 0" euler="0 0 0" friction="0.95 0.5 0.5"/>
           <geom type="box" group="0" rgba="0 0 0 0"  size="0.0025 0.00328 0.0100" pos="0.0184 0.00568 0" euler="0 0 0.298" friction="0.95 0.5 0.5"/>

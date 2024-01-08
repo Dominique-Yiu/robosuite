@@ -4,7 +4,7 @@ import numpy as np
 
 from robosuite.environments.manipulation.single_arm_env import SingleArmEnv
 from robosuite.models.arenas import TableArena
-from robosuite.models.objects import BoxObject, MugObject, BallObject
+from robosuite.models.objects import BoxObject, MugObject, BallObject, CupObject, LidObject
 from robosuite.models.tasks import ManipulationTask
 from robosuite.utils.mjcf_utils import CustomMaterial
 from robosuite.utils.observables import Observable, sensor
@@ -21,7 +21,7 @@ class Pour(SingleArmEnv):
         controller_configs=None,
         gripper_types="default",
         initialization_noise="default",
-        table_full_size=(0.8, 0.8, 0.05),
+        table_full_size=(0.4, 0.8, 0.05),
         table_friction=(1.0, 5e-3, 1e-4),
         use_camera_obs=True,
         use_object_obs=True,
@@ -49,7 +49,7 @@ class Pour(SingleArmEnv):
         # settings for table top
         self.table_full_size = table_full_size
         self.table_friction = table_friction
-        self.table_offset = np.array((0, 0, 0.8))
+        self.table_offset = np.array((0.2, 0, 0.8))
 
         # reward configuration
         self.reward_scale = reward_scale
@@ -151,13 +151,10 @@ class Pour(SingleArmEnv):
         self.liquid = balls
 
         # 2 cups
-        mugs = [
-            MugObject(
-                name=f"mug_{idx}",
-            )
-            for idx in range(2)
-        ]
-        self.glass = mugs
+        mug = MugObject(name="mug")
+        cup = CupObject(name="cup")
+        lid = LidObject(name="lid")
+        self.glass = [mug, cup, lid]
 
         # task includes arena, robot, and objects of interest
         self.model = ManipulationTask(
@@ -175,10 +172,23 @@ class Pour(SingleArmEnv):
         self.placement_initializer = SequentialCompositeSampler(name="ObjectSampler")
         self.placement_initializer.append_sampler(
             sampler=UniformRandomSampler(
-                name="ObjectSampler",
-                mujoco_objects=self.glass,
-                x_range=[-0.2, 0.2],
-                y_range=[0.05, 0.2],
+                name="MugSampler",
+                mujoco_objects=self.glass[0],
+                x_range=[-0.025, 0.025],
+                y_range=[0.1, 0.15],
+                rotation=None,
+                ensure_object_boundary_in_range=True,
+                ensure_valid_placement=True,
+                reference_pos=self.table_offset,
+                z_offset=0.00,
+            )
+        )
+        self.placement_initializer.append_sampler(
+            sampler=UniformRandomSampler(
+                name="CupSampler",
+                mujoco_objects=self.glass[1:],
+                x_range=[-0.025, 0.025],
+                y_range=[-0.1, -0.15],
                 rotation=None,
                 ensure_object_boundary_in_range=True,
                 ensure_valid_placement=True,
@@ -311,20 +321,40 @@ class Pour(SingleArmEnv):
         """
         super()._reset_internal()
 
+        cup_pos: np.array
         # Reset all object positions using initializer sampler if we're not directly loading from an xml
         if not self.deterministic_reset:
             # Sample from the placement initializer for all objects
             object_placements = self.placement_initializer.sample()
 
             # Loop through all objects and reset their positions
-            for idx, (obj_pos, obj_quat, obj) in enumerate(object_placements.values()):
-                if idx == 0:
-                    centers = calculate_sphere_centers(2, 0.015, center=np.array(obj_pos) + np.array([0, 0, 0.02]))
+            for obj_pos, obj_quat, obj in object_placements.values():
+                # import ipdb; ipdb.set_trace()
+                if isinstance(obj, CupObject):
+                    cup_pos = np.array(obj_pos)
+                    centers = calculate_sphere_centers(
+                        2,
+                        0.015,
+                        center=np.array(obj_pos) + np.array([0, 0, 0.02]),
+                    )
+                    self.sim.data.set_joint_qpos(
+                        obj.joints[0],
+                        np.concatenate([np.array(obj_pos), np.array(obj_quat)]),
+                    )
                     for i, center in enumerate(centers):
                         self.sim.data.set_joint_qpos(
-                            self.liquid[i].joints[0], np.concatenate([np.array(center), np.array(obj_quat)])
+                            self.liquid[i].joints[0],
+                            np.concatenate([np.array(center), np.array(obj_quat)]),
                         )
-                self.sim.data.set_joint_qpos(obj.joints[0], np.concatenate([np.array(obj_pos), np.array(obj_quat)]))
+                elif isinstance(obj, LidObject):
+                    self.sim.data.set_joint_qpos(
+                        obj.joints[0], np.concatenate([cup_pos + np.array([0, 0, 0.1]), np.array(obj_quat)])
+                    )
+                else:
+                    self.sim.data.set_joint_qpos(
+                        obj.joints[0],
+                        np.concatenate([np.array(obj_pos), np.array(obj_quat)]),
+                    )
 
     # TODO: target is not self.cube
     def visualize(self, vis_settings):
