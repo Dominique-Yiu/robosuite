@@ -119,7 +119,7 @@ def collect_human_trajectory(env, device, arm, env_configuration):
             # else:
             #     task_completion_hold_count = -1  # null the counter if there's no success
 
-            if current_timestamps == max_steps:
+            if current_timestamps >= max_steps:
                 current_timestamps = 0
                 break
     except KeyboardInterrupt as e:
