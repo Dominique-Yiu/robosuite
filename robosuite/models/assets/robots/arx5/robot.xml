@@ -1,6 +1,5 @@
 <mujoco model="arx5">
-  <actuator>
-    <!-- Physical limits of the actuator. Pulled from raw actuator spec sheet, see:
+  <actuator>    <!-- Physical limits of the actuator. Pulled from raw actuator spec sheet, see:
       https://www.kinovarobotics.com/sites/default/files/AS-ACT-KA58-KA75-SP-INT-EN%20201804-1.2%20%28KINOVA%E2%84%A2%20Actuator%20series%20KA75%2B%20KA-58%20Specifications%29.pdf -->
     <motor ctrllimited="true" ctrlrange="-100 100" joint="joint1" name="torq_j1"/>
     <motor ctrllimited="true" ctrlrange="-100 100" joint="joint2" name="torq_j2"/>
@@ -8,7 +7,6 @@
     <motor ctrllimited="true" ctrlrange="-100 100" joint="joint4" name="torq_j4"/>
     <motor ctrllimited="true" ctrlrange="-100 100" joint="joint5" name="torq_j5"/>
     <motor ctrllimited="true" ctrlrange="-100 100" joint="joint6" name="torq_j6"/>
-   
   </actuator>
   <asset>
     <mesh name="base_link" file="meshes/base_link.STL"/>
@@ -18,14 +16,11 @@
     <mesh name="link4" file="meshes/link4.STL"/>
     <mesh name="link5" file="meshes/link5.STL"/>
     <mesh name="link6" file="meshes/link6.STL"/>
-
-  
   </asset>
   <worldbody>
-    <body name="base" pos="0 0 0">
-      <!-- robot view -->
+    <body name="base" pos="0 0 0">      <!-- robot view -->
       <camera mode="fixed" name="robotview" pos="1.0 0 0.4" quat="0.653 0.271 0.271 0.653"/>
-    
+      <inertial diaginertia="0 0 0" mass="0" pos="0 0 0"/>
       <!-- mount attached here -->
       <body name="base_link" pos="0 0 0">
         <inertial diaginertia="0 0 0" mass="0" pos="0 0 0"/>
@@ -59,19 +54,14 @@
                   <body name="link6" pos="0.03045 0 0.084" quat="-3.67321e-06 -1 0 0">
                     <inertial pos="0.0365156 -1.47703e-05 0.000265587" quat="0.5 0.5 -0.5 0.5" mass="0.315932" diaginertia="0.00038 0.00031 0.00015"/>
                     <joint name="joint6" pos="0 0 0" axis="1 0 0" range="-360 360"/>
-                    <body name="right_hand" pos="0 0 0">
-                      <!-- This sites were added for visualization. They are all standardized between models-->
-                      <!-- Position mimics the gripper attachment point (right_hand) -->
-                      <!--  Y-axis should be perpendicular to grasping motion, and Z-axis should point out of the robot eef -->
+                    <body name="right_hand" pos="0 0 0">                      <!-- This sites were added for visualization. They are all standardized between models-->                      <!-- Position mimics the gripper attachment point (right_hand) -->                      <!--  Y-axis should be perpendicular to grasping motion, and Z-axis should point out of the robot eef -->
                       <site name="ee" pos="0 0 0" size="0.01 0.01 0.01" rgba="0 0 1 1" type="sphere" group="1"/>
-                      <site name="ee_x" pos="0 0 0" size="0.005 .1"  quat="0.707105 0.707108 0 0 " rgba="1 0 0 0" type="cylinder" group="1"/>
+                      <site name="ee_x" pos="0 0 0" size="0.005 .1" quat="0.707105 0.707108 0 0 " rgba="1 0 0 0" type="cylinder" group="1"/>
                       <site name="ee_z" pos="0 0 0" size="0.005 .1" quat="0.707105 0 0 0.707108" rgba="0 0 1 0" type="cylinder" group="1"/>
                       <site name="ee_y" pos="0 0 0" size="0.005 .1" quat="0.707105 0 0.707108 0 " rgba="0 1 0 0" type="cylinder" group="1"/>
                       <!-- This camera points out from the eef. -->
-                      <camera mode="fixed" name="eye_in_hand" pos="0.05 0 0" quat="0 0.707108 0.707108 0" fovy="75"/>
-                      <!-- to add gripper -->
-                    </body>
-                    
+                      <camera mode="fixed" name="eye_in_hand" pos="0.1 0 0" quat="-0.5 -0.5  0.5  0.5" fovy="75"/>
+                      <!-- to add gripper --></body>
                   </body>
                 </body>
               </body>
