@@ -98,13 +98,6 @@ import argparse
 
 import numpy as np
 
-import pathlib
-import sys
-
-root_dir = str(pathlib.Path(__file__).parent.parent.parent)
-print(root_dir)
-sys.path.append(root_dir)
-
 import robosuite as suite
 from robosuite import load_controller_config
 from robosuite.utils.input_utils import input2action
