@@ -24,7 +24,7 @@ from robosuite.wrappers import DataCollectionWrapper, VisualizationWrapper
 
 
 class EnvRunner:
-    def __init__(self, env, freq=20):
+    def __init__(self, env, freq=60):
         self.env = env
         self.freq = freq
         self.action = None
@@ -51,7 +51,7 @@ class EnvRunner:
             sleep_time = target_interval - elapsed
             if sleep_time > 0:
                 time.sleep(sleep_time)
-            # print(f"Frequency: {1 / (time.time() - start_time)}")
+            print(f"Frequency: {1 / (time.time() - start_time)}")
 
 
 def collect_human_trajectory(env, device, arm, env_configuration):
@@ -79,7 +79,13 @@ def collect_human_trajectory(env, device, arm, env_configuration):
     global current_timestamps
 
     task_completion_hold_count = -1  # counter to collect 10 timesteps after reaching goal
-    device.start_control()
+    if type(device) == list:
+        device1 = device[0]             #Keyboard 
+        device1.start_control()
+        device2 = device[1]             #SpaceMouse
+        device2.start_control()
+    else:
+        device.start_control()
 
     # Loop until we get a reset from the input or the task completes
     try:
@@ -89,9 +95,18 @@ def collect_human_trajectory(env, device, arm, env_configuration):
             active_robot = env.robots[0] if env_configuration == "bimanual" else env.robots[arm == "left"]
 
             # Get the newest action
-            action, grasp = input2action(
-                device=device, robot=active_robot, active_arm=arm, env_configuration=env_configuration
-            )
+            if type(device) == list:
+                action1, grasp = input2action(
+                    device=device1, robot=active_robot, active_arm=arm, env_configuration=env_configuration
+                )
+                action2, grasp = input2action(
+                    device=device2, robot=active_robot, active_arm=arm, env_configuration=env_configuration
+                )
+                action = np.concatenate([action1,action2])
+            else:
+                action, grasp = input2action(
+                    device=device, robot=active_robot, active_arm=arm, env_configuration=env_configuration
+                )
             if action is not None:
                 tmp_xyz = action[:6]
                 is_dead = (-deadzone < tmp_xyz) & (tmp_xyz < deadzone)
@@ -101,23 +116,9 @@ def collect_human_trajectory(env, device, arm, env_configuration):
             if action is None:
                 break
 
-            # Run environment step
-            # env.step(action)
+
             env_runner.set_action(action)
             env.render()
-
-            # Also break if we complete the task
-            # if task_completion_hold_count == 0:
-            #     break
-
-            # state machine to check for having a success for 10 consecutive timesteps
-            # if env._check_success():
-            #     if task_completion_hold_count > 0:
-            #         task_completion_hold_count -= 1  # latched state, decrement count
-            #     else:
-            #         task_completion_hold_count = 10  # reset count on first success timestep
-            # else:
-            #     task_completion_hold_count = -1  # null the counter if there's no success
 
             if current_timestamps >= max_steps:
                 current_timestamps = 0
@@ -231,20 +232,20 @@ if __name__ == "__main__":
         type=str,
         default=os.path.join(suite.models.assets_root, "demonstrations"),
     )
-    parser.add_argument("--environment", type=str, default="Pour")
-    parser.add_argument("--robots", nargs="+", type=str, default="IIWA", help="Which robot(s) to use in the env")
+    parser.add_argument("--environment", type=str, default="TwoArmPour")
+    parser.add_argument("--robots", nargs="+", type=str, default=["Arx5","Arx5"], help="Which robot(s) to use in the env")
     parser.add_argument(
         "--config", type=str, default="single-arm-opposed", help="Specified environment configuration if necessary"
     )
-    parser.add_argument("--arm", type=str, default="right", help="Which arm to control (eg bimanual) 'right' or 'left'")
-    parser.add_argument("--camera", type=str, default="agentview", help="Which camera to use for collecting demos")
+    parser.add_argument("--arm", type=str, default="bimanual", help="Which arm to control (eg bimanual) 'right' or 'left'")
+    parser.add_argument("--camera", type=str, default="frontview", help="Which camera to use for collecting demos")
     parser.add_argument(
         "--controller", type=str, default="OSC_POSE", help="Choice of controller. Can be 'IK_POSE' or 'OSC_POSE'"
     )
-    parser.add_argument("--device", type=str, default="spacemouse")
-    parser.add_argument("--pos-sensitivity", type=float, default=1.6, help="How much to scale position user inputs")
-    parser.add_argument("--rot-sensitivity", type=float, default=1.6, help="How much to scale rotation user inputs")
-    parser.add_argument("--control_freq", type=int, default=30)
+    parser.add_argument("--device", type=str, default="both",help="spacemouse,keyboard,both")
+    parser.add_argument("--pos-sensitivity", type=float, default=3, help="How much to scale position user inputs")
+    parser.add_argument("--rot-sensitivity", type=float, default=3, help="How much to scale rotation user inputs")
+    parser.add_argument("--control_freq", type=int, default=60)
     args = parser.parse_args()
 
     # Get controller config
@@ -282,7 +283,6 @@ if __name__ == "__main__":
     # wrap the environment with data collection wrapper
     tmp_directory = "/tmp/{}".format(str(time.time()).replace(".", "_"))
     env = DataCollectionWrapper(env, tmp_directory)
-
     # initialize device
     if args.device == "keyboard":
         from robosuite.devices import Keyboard
@@ -292,6 +292,14 @@ if __name__ == "__main__":
         from robosuite.devices import SpaceMouse
 
         device = SpaceMouse(pos_sensitivity=args.pos_sensitivity, rot_sensitivity=args.rot_sensitivity)
+    elif args.device == "both":
+        from robosuite.devices import Keyboard
+
+        device1 = Keyboard(pos_sensitivity=args.pos_sensitivity, rot_sensitivity=args.rot_sensitivity)
+        from robosuite.devices import SpaceMouse        
+
+        device2 = SpaceMouse(pos_sensitivity=args.pos_sensitivity, rot_sensitivity=args.rot_sensitivity)
+        device = [device1,device2]
     else:
         raise Exception("Invalid device choice: choose either 'keyboard' or 'spacemouse'.")
 

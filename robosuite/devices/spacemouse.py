@@ -113,8 +113,7 @@ class SpaceMouse(Device):
 
     def __init__(
         self,
-        vendor_id=macros.SPACEMOUSE_VENDOR_ID,
-        product_id=macros.SPACEMOUSE_PRODUCT_ID,
+        vendor_id=9583, product_id=50734,
         pos_sensitivity=1.0,
         rot_sensitivity=1.0,
     ):
@@ -123,7 +122,8 @@ class SpaceMouse(Device):
         self.vendor_id = vendor_id
         self.product_id = product_id
         self.device = hid.device()
-        self.device.open(self.vendor_id, self.product_id)  # SpaceMouse
+        # import ipdb;ipdb.set_trace()
+        self.device.open(vendor_id, product_id)  # SpaceMouse
 
         self.pos_sensitivity = pos_sensitivity
         self.rot_sensitivity = rot_sensitivity
