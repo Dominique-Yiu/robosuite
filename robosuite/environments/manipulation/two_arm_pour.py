@@ -368,13 +368,13 @@ class TwoArmPour(TwoArmEnv):
         super()._setup_references()
 
         self.glass_body_id = {}
-        # self.liquid_body_id = {}
+        self.liquid_body_id = {}
 
         for obj in self.glass:
             self.glass_body_id[obj.name] = self.sim.model.body_name2id(obj.root_body)
 
-        # for obj in self.liquid:
-        #     self.liquid_body_id[obj.name] = self.sim.model.body_name2id(obj.root_body)
+        for obj in self.liquid:
+            self.liquid_body_id[obj.name] = self.sim.model.body_name2id(obj.root_body)
 
     # TODO:
     def _setup_observables(self):
@@ -415,7 +415,6 @@ class TwoArmPour(TwoArmEnv):
                 names += obj_sensor_names
                 enableds += [True] * len(obj_sensors)
                 actives += [True] * len(obj_sensors)
-
             # Create observables
             for name, s, enabled, active in zip(names, sensors, enableds, actives):
                 observables[name] = Observable(
@@ -425,8 +424,35 @@ class TwoArmPour(TwoArmEnv):
                     enabled=enabled,
                     active=active,
                 )
-        return observables
 
+            liquid_names = []
+            liquid_sensors = []   
+            enableds = [True]
+            actives = [False]
+
+
+            for i, obj in enumerate(self.liquid):
+                obj_sensors, obj_sensor_names = self._create_fluid_sensors(obj.name, modality=modality)
+                liquid_sensors.append(obj_sensors)
+                liquid_names.append(obj_sensor_names)
+                enableds.append([True])
+                actives.append([True])
+            for name, s, enabled, active in zip(liquid_names, liquid_sensors, enableds, actives):
+                observables[name] = Observable(
+                    name=name,
+                    sensor=s,
+                    sampling_rate=self.control_freq,
+                    enabled=enabled,
+                    active=active,
+                )
+
+        return observables
+    def _create_fluid_sensors(self, ball_name, modality="object"):
+        @sensor(modality=modality)
+        def ball_center(obs_cache):
+            return self.sim.data.body_xpos[self.liquid_body_id[ball_name]]
+        return ball_center,f"{ball_name}_pos"
+    
     def _create_obj_sensors(self, obj_name, modality="object"):
         """
         Helper function to create sensors for a given object. This is abstracted in a separate function call so that we

@@ -42,7 +42,7 @@ class EnvRunner:
             start_time = time.time()
             with self.lock:
                 if self.action is not None:
-                    self.env.step(self.action)
+                    state , reward, done, _ = self.env.step(self.action)          #see its observasion!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     current_timestamps += 1
 
             end_time = time.time()
@@ -103,6 +103,11 @@ def collect_human_trajectory(env, device, arm, env_configuration):
                     device=device2, robot=active_robot, active_arm=arm, env_configuration=env_configuration
                 )
                 action = np.concatenate([action1,action2])
+                # if current_timestamps <= 1000:
+                #     action = np.zeros(env.action_dim)
+                #     action[0] = 0.1
+                # else:
+                #     action = np.zeros(env.action_dim)
             else:
                 action, grasp = input2action(
                     device=device, robot=active_robot, active_arm=arm, env_configuration=env_configuration
@@ -120,9 +125,9 @@ def collect_human_trajectory(env, device, arm, env_configuration):
             env_runner.set_action(action)
             env.render()
 
-            if current_timestamps >= max_steps:
-                current_timestamps = 0
-                break
+            # if current_timestamps >= max_steps:
+            #     current_timestamps = 0
+            #     break
     except KeyboardInterrupt as e:
         env_runner.stop_event.set()
         step_thread.join()
@@ -307,7 +312,6 @@ if __name__ == "__main__":
     t1, t2 = str(time.time()).split(".")
     new_dir = os.path.join(args.directory, "{}_{}".format(t1, t2))
     os.makedirs(new_dir)
-
     idx = 0
     # collect demonstrations
     while True:
