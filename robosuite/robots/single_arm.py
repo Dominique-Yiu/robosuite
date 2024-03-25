@@ -334,9 +334,13 @@ class SingleArm(Manipulator):
             def gripper_qvel(obs_cache):
                 return np.array([self.sim.data.qvel[x] for x in self._ref_gripper_joint_vel_indexes])
 
-            sensors += [gripper_qpos, gripper_qvel]
-            names += [f"{pf}gripper_qpos", f"{pf}gripper_qvel"]
-            actives += [True, True]
+            @sensor(modality=modality)
+            def gripper_site_quat(obs_cache):
+                return T.mat2quat(self.sim.data.get_site_xmat(self.gripper.important_sites["grip_site"]))
+
+            sensors += [gripper_qpos, gripper_qvel, gripper_site_quat]
+            names += [f"{pf}gripper_qpos", f"{pf}gripper_qvel", f"{pf}gripper_site_quat"]
+            actives += [True, True, True]
 
         # Create observables for this robot
         for name, s, active in zip(names, sensors, actives):

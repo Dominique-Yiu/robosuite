@@ -764,7 +764,7 @@ class MjData(metaclass=_MjDataMeta):
         gid = self.model.geom_name2id(name)
         jacv = np.zeros((3, self.model.nv))
         mujoco.mj_jacGeom(self.model._model, self._data, None, jacv, gid)
-        return jacr
+        return jacv
 
     def get_geom_xvelp(self, name):
         """

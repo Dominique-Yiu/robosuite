@@ -10,6 +10,7 @@ import numpy as np
 
 from robosuite.utils.mjcf_utils import save_sim_model
 from robosuite.wrappers import Wrapper
+import robosuite.utils.transform_utils  as T
 
 
 class DataCollectionWrapper(Wrapper):
@@ -32,6 +33,8 @@ class DataCollectionWrapper(Wrapper):
         self.states = []
         self.action_infos = []  # stores information about actions taken
         self.successful = False  # stores success state of demonstration
+        self.centric_obj_pose = []
+        self.subtask_begin_index = []
 
         # how often to save simulation state, in terms of environment steps
         self.collect_freq = collect_freq
@@ -121,10 +124,14 @@ class DataCollectionWrapper(Wrapper):
             states=np.array(self.states),
             action_infos=self.action_infos,
             successful=self.successful,
+            centric_obj_pose=self.centric_obj_pose,
+            subtask_begin_index=self.subtask_begin_index,
             env=env_name,
         )
         self.states = []
         self.action_infos = []
+        self.centric_obj_pose = []
+        self.subtask_begin_index = []
         self.successful = False
 
     def reset(self):
@@ -168,6 +175,15 @@ class DataCollectionWrapper(Wrapper):
             info = {}
             info["actions"] = np.array(action)
             self.action_infos.append(info)
+            if self.t == 10:    # avoid instability at the beginning
+                mug_init_pos = np.concatenate(
+                    (
+                        self.env.sim.data.body_xpos[self.env.mug_body_id],
+                        T.convert_quat(self.env.sim.data.body_xquat[self.env.mug_body_id], "xyzw"),
+                    )
+                )
+                self.centric_obj_pose.append(mug_init_pos)
+                self.subtask_begin_index.append(self.t - 1)
 
         # check if the demonstration is successful
         if self.env._check_success():

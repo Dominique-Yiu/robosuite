@@ -3,6 +3,7 @@ A script to collect a batch of human demonstrations.
 
 The demonstrations can be played back using the `playback_demonstrations_from_hdf5.py` script.
 """
+
 current_timestamps = 0
 import argparse
 import datetime
@@ -16,15 +17,22 @@ import h5py
 import numpy as np
 import threading
 
+import pathlib
+
+root_dir = pathlib.Path(__file__).parent.parent.parent
+import sys
+
+sys.path.append(str(root_dir))
 import robosuite as suite
 import robosuite.macros as macros
 from robosuite import load_controller_config
 from robosuite.utils.input_utils import input2action
 from robosuite.wrappers import DataCollectionWrapper, VisualizationWrapper
+from scipy.spatial.transform import Rotation
 
 
 class EnvRunner:
-    def __init__(self, env, freq=20):
+    def __init__(self, env, freq=50):
         self.env = env
         self.freq = freq
         self.action = None
@@ -85,7 +93,6 @@ def collect_human_trajectory(env, device, arm, env_configuration):
     try:
         while True:
             # Set active robot
-            print(current_timestamps)
             active_robot = env.robots[0] if env_configuration == "bimanual" else env.robots[arm == "left"]
 
             # Get the newest action
@@ -107,17 +114,17 @@ def collect_human_trajectory(env, device, arm, env_configuration):
             env.render()
 
             # Also break if we complete the task
-            # if task_completion_hold_count == 0:
-            #     break
+            if task_completion_hold_count == 0:
+                break
 
             # state machine to check for having a success for 10 consecutive timesteps
-            # if env._check_success():
-            #     if task_completion_hold_count > 0:
-            #         task_completion_hold_count -= 1  # latched state, decrement count
-            #     else:
-            #         task_completion_hold_count = 10  # reset count on first success timestep
-            # else:
-            #     task_completion_hold_count = -1  # null the counter if there's no success
+            if env._check_success():
+                if task_completion_hold_count > 0:
+                    task_completion_hold_count -= 1  # latched state, decrement count
+                else:
+                    task_completion_hold_count = 10  # reset count on first success timestep
+            else:
+                task_completion_hold_count = -1  # null the counter if there's no success
 
             if current_timestamps >= max_steps:
                 current_timestamps = 0
@@ -174,6 +181,8 @@ def gather_demonstrations_as_hdf5(directory, out_dir, env_info):
         state_paths = os.path.join(directory, ep_directory, "state_*.npz")
         states = []
         actions = []
+        centric_obj_pose = []
+        subtask_begin_index = []
         success = True
 
         for state_file in sorted(glob(state_paths)):
@@ -183,6 +192,8 @@ def gather_demonstrations_as_hdf5(directory, out_dir, env_info):
             states.extend(dic["states"])
             for ai in dic["action_infos"]:
                 actions.append(ai["actions"])
+            centric_obj_pose.extend(dic["centric_obj_pose"])
+            subtask_begin_index.extend(dic["subtask_begin_index"])
             success = success or dic["successful"]
 
         if len(states) == 0:
@@ -197,8 +208,8 @@ def gather_demonstrations_as_hdf5(directory, out_dir, env_info):
             del states[-1]
             assert len(states) == len(actions)
 
-            num_eps += 1
             ep_data_grp = grp.create_group("demo_{}".format(num_eps))
+            num_eps += 1
 
             # store model xml as an attribute
             xml_path = os.path.join(directory, ep_directory, "model.xml")
@@ -209,6 +220,8 @@ def gather_demonstrations_as_hdf5(directory, out_dir, env_info):
             # write datasets for states and actions
             ep_data_grp.create_dataset("states", data=np.array(states))
             ep_data_grp.create_dataset("actions", data=np.array(actions))
+            ep_data_grp.create_dataset("centric_obj_pose", data=np.array(centric_obj_pose))
+            ep_data_grp.create_dataset("subtask_begin_index", data=np.array(subtask_begin_index))
         else:
             print("Demonstration is unsuccessful and has NOT been saved")
 
@@ -231,8 +244,8 @@ if __name__ == "__main__":
         type=str,
         default=os.path.join(suite.models.assets_root, "demonstrations"),
     )
-    parser.add_argument("--environment", type=str, default="Pour")
-    parser.add_argument("--robots", nargs="+", type=str, default="IIWA", help="Which robot(s) to use in the env")
+    parser.add_argument("--environment", type=str, default="Lift")
+    parser.add_argument("--robots", nargs="+", type=str, default="Panda", help="Which robot(s) to use in the env")
     parser.add_argument(
         "--config", type=str, default="single-arm-opposed", help="Specified environment configuration if necessary"
     )
@@ -241,9 +254,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--controller", type=str, default="OSC_POSE", help="Choice of controller. Can be 'IK_POSE' or 'OSC_POSE'"
     )
-    parser.add_argument("--device", type=str, default="spacemouse")
-    parser.add_argument("--pos-sensitivity", type=float, default=1.6, help="How much to scale position user inputs")
-    parser.add_argument("--rot-sensitivity", type=float, default=1.6, help="How much to scale rotation user inputs")
+    parser.add_argument("--device", type=str, default="keyboard")
+    parser.add_argument("--pos-sensitivity", type=float, default=1.0, help="How much to scale position user inputs")
+    parser.add_argument("--rot-sensitivity", type=float, default=1.0, help="How much to scale rotation user inputs")
     parser.add_argument("--control_freq", type=int, default=30)
     args = parser.parse_args()
 
@@ -252,7 +265,6 @@ if __name__ == "__main__":
 
     # Create argument configuration
     config = {
-        "env_name": args.environment,
         "robots": args.robots,
         "controller_configs": controller_config,
         "control_freq": args.control_freq,
@@ -265,6 +277,7 @@ if __name__ == "__main__":
     # Create environment
     env = suite.make(
         **config,
+        env_name=args.environment,
         has_renderer=True,
         has_offscreen_renderer=False,
         render_camera=args.camera,

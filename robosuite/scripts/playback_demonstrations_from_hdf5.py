@@ -45,6 +45,7 @@ if __name__ == "__main__":
 
     env = robosuite.make(
         **env_info,
+        env_name=env_name,
         has_renderer=True,
         has_offscreen_renderer=False,
         ignore_done=True,
