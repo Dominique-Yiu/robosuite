@@ -18,11 +18,9 @@ import numpy as np
 import threading
 
 import pathlib
-
-root_dir = pathlib.Path(__file__).parent.parent.parent
 import sys
-
-sys.path.append(str(root_dir))
+import pathlib
+sys.path.append(str(pathlib.Path(__file__).parent.parent.parent.absolute()))
 import robosuite as suite
 import robosuite.macros as macros
 from robosuite import load_controller_config
@@ -32,7 +30,7 @@ from scipy.spatial.transform import Rotation
 
 
 class EnvRunner:
-    def __init__(self, env, freq=50):
+    def __init__(self, env, freq=60):
         self.env = env
         self.freq = freq
         self.action = None
@@ -50,7 +48,7 @@ class EnvRunner:
             start_time = time.time()
             with self.lock:
                 if self.action is not None:
-                    self.env.step(self.action)
+                    obs = self.env.step(self.action)
                     current_timestamps += 1
 
             end_time = time.time()
@@ -83,7 +81,7 @@ def collect_human_trajectory(env, device, arm, env_configuration):
     env_runner = EnvRunner(env)
     step_thread = threading.Thread(target=env_runner.run_step)
     step_thread.start()
-    max_steps = 10 * env_runner.freq
+    max_steps = 20 * env_runner.freq
     global current_timestamps
 
     task_completion_hold_count = -1  # counter to collect 10 timesteps after reaching goal
@@ -181,8 +179,6 @@ def gather_demonstrations_as_hdf5(directory, out_dir, env_info):
         state_paths = os.path.join(directory, ep_directory, "state_*.npz")
         states = []
         actions = []
-        centric_obj_pose = []
-        subtask_begin_index = []
         success = True
 
         for state_file in sorted(glob(state_paths)):
@@ -192,8 +188,6 @@ def gather_demonstrations_as_hdf5(directory, out_dir, env_info):
             states.extend(dic["states"])
             for ai in dic["action_infos"]:
                 actions.append(ai["actions"])
-            centric_obj_pose.extend(dic["centric_obj_pose"])
-            subtask_begin_index.extend(dic["subtask_begin_index"])
             success = success or dic["successful"]
 
         if len(states) == 0:
@@ -220,8 +214,6 @@ def gather_demonstrations_as_hdf5(directory, out_dir, env_info):
             # write datasets for states and actions
             ep_data_grp.create_dataset("states", data=np.array(states))
             ep_data_grp.create_dataset("actions", data=np.array(actions))
-            ep_data_grp.create_dataset("centric_obj_pose", data=np.array(centric_obj_pose))
-            ep_data_grp.create_dataset("subtask_begin_index", data=np.array(subtask_begin_index))
         else:
             print("Demonstration is unsuccessful and has NOT been saved")
 
@@ -234,6 +226,52 @@ def gather_demonstrations_as_hdf5(directory, out_dir, env_info):
     grp.attrs["env_info"] = env_info
 
     f.close()
+
+
+def choose_mimicgen_environment():
+    """
+    Prints out environment options, and returns the selected env_name choice
+
+    Returns:
+        str: Chosen environment name
+    """
+
+    # try to import robosuite task zoo to include those envs in the robosuite registry
+    try:
+        import robosuite_task_zoo
+    except ImportError:
+        pass
+
+    # all base robosuite environments (and maybe robosuite task zoo)
+    robosuite_envs = set(suite.ALL_ENVIRONMENTS)
+
+    # all environments including mimicgen environments
+    import mimicgen_envs
+
+    all_envs = set(suite.ALL_ENVIRONMENTS)
+
+    # get only mimicgen envs
+    only_mimicgen_envs = sorted(all_envs - robosuite_envs)
+
+    # keep only envs that correspond to the different reset distributions from the paper
+    envs = [x for x in only_mimicgen_envs if x[-1].isnumeric()]
+
+    # Select environment to run
+    print("Here is a list of environments in the suite:\n")
+
+    for k, env in enumerate(envs):
+        print("[{}] {}".format(k, env))
+    print()
+    try:
+        s = input("Choose an environment to run " + "(enter a number from 0 to {}): ".format(len(envs) - 1))
+        # parse input into a number within range
+        k = min(max(int(s), 0), len(envs))
+    except:
+        k = 0
+        print("Input is not valid. Use {} by default.\n".format(envs[k]))
+
+    # Return the chosen environment name
+    return envs[k]
 
 
 if __name__ == "__main__":
@@ -271,6 +309,7 @@ if __name__ == "__main__":
     }
 
     # Check if we're using a multi-armed environment and use env_configuration argument if so
+    args.environment = choose_mimicgen_environment()
     if "TwoArm" in args.environment:
         config["env_configuration"] = args.config
 

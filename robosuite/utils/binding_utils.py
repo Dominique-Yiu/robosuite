@@ -59,6 +59,8 @@ if _MUJOCO_GL not in ("disable", "disabled", "off", "false", "0"):
     else:
         from robosuite.renderers.context.glfw_context import GLFWGLContext as GLContext
 
+# Avoid AsyncVectorEnv (multiprocessing implementation from gymnasium/gym) OpenGL error
+from robosuite.renderers.context.glfw_context import GLFWGLContext as GLContext
 
 class MjRenderContext:
     """
