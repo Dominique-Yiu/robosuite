@@ -1,0 +1,25 @@
+<mujoco model="cup">
+
+    <asset>
+        <texture name="grid" type="2d" builtin="checker" width="512" height="512" rgb1="0 0.6 0.5" rgb2="1 1 1"/>
+        <material name="grid" texture="grid" texrepeat="10 10" texuniform="true" reflectance=".2"/>
+        <mesh name="lid_obj" file="meshes/lid.obj" scale=".0012 .0012 .002"/>
+        <material name="floor" reflectance=".1"/>
+    </asset>
+
+    <worldbody>
+        <!-- <geom type="plane" size="5 5 .01" rgba="1 1 1 1" material="floor"/> -->
+        <body>
+            <freejoint/>
+            <body name="object" pos="0 0 0">
+                <inertial pos="0 0 0" mass="0.05" diaginertia="0.001 0.001 0.001" />
+                <geom pos="0 0 0" mesh="lid_obj" type="mesh" rgba="0.4 0.4 0.7 1" solimp="0.998 0.998 0.001" solref="0.001 1" density="100" friction="0.95 0.5 0.5" conaffinity="0" contype="0" group="1" condim="4"/>
+                <geom type="box" group="0" rgba="0 0 0 0"  size="0.008 0.025 0.015" pos="0 0 0.025" euler="0 0 0.0" />
+                <geom group="0" rgba="0 0 0 0"  type="cylinder" size="0.045 0.002" pos="0 0 0.0026"/>
+            </body>
+            <site rgba="0 0 0 0" size="0.005" pos="0 0 -0.06" name="bottom_site" />
+            <site rgba="0 0 0 0" size="0.005" pos="0 0 0.04" name="top_site" />
+            <site rgba="0 0 0 0" size="0.005" pos="0.025 0.025 0" name="horizontal_radius_site" />
+        </body>
+    </worldbody>
+</mujoco>

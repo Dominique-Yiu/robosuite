@@ -1,0 +1,44 @@
+<mujoco model="cup">
+
+    <asset>
+        <texture name="grid" type="2d" builtin="checker" width="512" height="512" rgb1="0 0.6 0.5" rgb2="1 1 1"/>
+        <material name="grid" texture="grid" texrepeat="10 10" texuniform="true" reflectance=".2"/>
+        <mesh name="cup_obj" file="meshes/cup.obj" scale=".001 .0015 .001"/>
+        <material name="floor" reflectance=".1"/>
+    </asset>
+
+    <worldbody>
+        <geom type="plane" size="5 5 .01" rgba="1 1 1 1" material="floor"/>
+        <body>
+            <freejoint/>
+            <body name="object" pos="0 0 0">
+                <inertial pos="0 0 0.025" mass="0.01" diaginertia="0.001 0.001 0.001" />
+                <geom pos="0 0 0" mesh="cup_obj" type="mesh" euler="1.57 0 0" rgba="0 0.6 0.5 1" solimp="0.998 0.998 0.001" solref="0.001 1" density="100" friction="0.95 0.5 0.5" conaffinity="0" contype="0" group="1" condim="4"/>
+                <geom type="box" group="0" rgba="0 0 0 0" size="0.0030 0.00704 0.060" pos="0.03 0 0.060" euler="0 0 0" />
+                <geom type="box" group="0" rgba="0 0 0 0" size="0.0030 0.00704 0.060" pos="0.0285 0.0092 0.060" euler="0 0 0.314" />
+                <geom type="box" group="0" rgba="0 0 0 0" size="0.0030 0.00704 0.060" pos="0.0242 0.0176 0.060" euler="0 0 0.628" />
+                <geom type="box" group="0" rgba="0 0 0 0" size="0.0030 0.00704 0.060" pos="0.0176 0.0242 0.060" euler="0 0 0.942" />
+                <geom type="box" group="0" rgba="0 0 0 0" size="0.0030 0.00704 0.060" pos="0.0092 0.0285 0.060" euler="0 0 1.257" />
+                <geom type="box" group="0" rgba="0 0 0 0" size="0.0030 0.00704 0.060" pos="0 0.03 0.060" euler="0 0 1.571" />
+                <geom type="box" group="0" rgba="0 0 0 0" size="0.0030 0.00704 0.060" pos="-0.0092 0.0285 0.060" euler="0 0 1.885" />
+                <geom type="box" group="0" rgba="0 0 0 0" size="0.0030 0.00704 0.060" pos="-0.0176 0.0242 0.060" euler="0 0 2.199" />
+                <geom type="box" group="0" rgba="0 0 0 0" size="0.0030 0.00704 0.060" pos="-0.0242 0.0176 0.060" euler="0 0 2.513" />
+                <geom type="box" group="0" rgba="0 0 0 0" size="0.0030 0.00704 0.060" pos="-0.0285 0.0092 0.060" euler="0 0 2.827" />
+                <geom type="box" group="0" rgba="0 0 0 0" size="0.0030 0.00704 0.060" pos="-0.03 0 0.060" euler="0 0 3.142" />
+                <geom type="box" group="0" rgba="0 0 0 0" size="0.0030 0.00704 0.060" pos="-0.0285 -0.0092 0.060" euler="0 0 3.456" />
+                <geom type="box" group="0" rgba="0 0 0 0" size="0.0030 0.00704 0.060" pos="-0.0242 -0.0176 0.060" euler="0 0 3.77" />
+                <geom type="box" group="0" rgba="0 0 0 0" size="0.0030 0.00704 0.060" pos="-0.0176 -0.0242 0.060" euler="0 0 4.084" />
+                <geom type="box" group="0" rgba="0 0 0 0" size="0.0030 0.00704 0.060" pos="-0.0092 -0.0285 0.060" euler="0 0 4.398" />
+                <geom type="box" group="0" rgba="0 0 0 0" size="0.0030 0.00704 0.060" pos="0 -0.03 0.060" euler="0 0 4.712" />
+                <geom type="box" group="0" rgba="0 0 0 0" size="0.0030 0.00704 0.060" pos="0.0092 -0.0285 0.060" euler="0 0 5.027" />
+                <geom type="box" group="0" rgba="0 0 0 0" size="0.0030 0.00704 0.060" pos="0.0176 -0.0242 0.060" euler="0 0 5.341" />
+                <geom type="box" group="0" rgba="0 0 0 0" size="0.0030 0.00704 0.060" pos="0.0242 -0.0176 0.060" euler="0 0 5.655" />
+                <geom type="box" group="0" rgba="0 0 0 0" size="0.0030 0.00704 0.060" pos="0.0285 -0.0092 0.060" euler="0 0 5.969" />
+                <geom group="0" type="cylinder" rgba="0 0 0 0" size="0.035 0.00306" pos="0 0 0.0026" />
+            </body>
+            <site rgba="0 0 0 0" size="0.005" pos="0 0 -0.06" name="bottom_site" />
+            <site rgba="0 0 0 0" size="0.005" pos="0 0 0.04" name="top_site" />
+            <site rgba="0 0 0 0" size="0.005" pos="0.025 0.025 0" name="horizontal_radius_site" />
+        </body>
+    </worldbody>
+</mujoco>

@@ -47,7 +47,7 @@ class Keyboard(Device):
 
         print("")
         print_command("Keys", "Command")
-        print_command("q", "reset simulation")
+        print_command("p", "reset simulation")
         print_command("spacebar", "toggle gripper (open/close)")
         print_command("w-a-s-d", "move arm horizontally in x-y plane")
         print_command("r-f", "move arm vertically")
@@ -161,7 +161,7 @@ class Keyboard(Device):
                 self.grasp = not self.grasp  # toggle gripper
 
             # user-commanded reset
-            elif key.char == "q":
+            elif key.char == "p":
                 self._reset_state = 1
                 self._enabled = False
                 self._reset_internal_state()

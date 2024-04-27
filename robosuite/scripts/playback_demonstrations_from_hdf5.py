@@ -50,7 +50,6 @@ if __name__ == "__main__":
         ignore_done=True,
         use_camera_obs=False,
         reward_shaping=True,
-        control_freq=20,
     )
 
     # list of all demonstrations episodes

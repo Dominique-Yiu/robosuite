@@ -17,6 +17,9 @@ from .xml_objects import (
     CanVisualObject,
     PlateWithHoleObject,
     DoorObject,
+    MugObject,
+    CupObject,
+    LidObject,
 )
 from .primitive import *
 from .composite import *
