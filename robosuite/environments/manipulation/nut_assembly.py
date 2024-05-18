@@ -10,6 +10,7 @@ from robosuite.models.objects import RoundNutObject, SquareNutObject
 from robosuite.models.tasks import ManipulationTask
 from robosuite.utils.observables import Observable, sensor
 from robosuite.utils.placement_samplers import SequentialCompositeSampler, UniformRandomSampler
+from robosuite.utils.mjcf_utils import array_to_string, string_to_array, find_elements
 
 
 class NutAssembly(SingleArmEnv):
@@ -188,6 +189,7 @@ class NutAssembly(SingleArmEnv):
         self.single_object_mode = single_object_mode
         self.nut_to_id = {"square": 0, "round": 1}
         self.nut_id_to_sensors = {}  # Maps nut id to sensor names for that nut
+        self.peg_id_to_sensors = {}
         if nut_type is not None:
             assert nut_type in self.nut_to_id.keys(), "invalid @nut_type argument - choose one of {}".format(
                 list(self.nut_to_id.keys())
@@ -270,16 +272,20 @@ class NutAssembly(SingleArmEnv):
 
         # TODO: mode == 0
         if self.single_object_mode == 0:
-            pass
+            self._check_success()
+            for i, nut in enumerate(self.nuts):
+                grasped = self._check_grasp(gripper=self.robots[0].gripper, object_geoms=nut)
+                if grasped:
+                    reward = 1.0 + 2 * i
+
+                if self.objects_on_pegs[i]:
+                    reward = 2.0 + 2 * i
+            reward = reward / 2.0
         else:
-            grasped = self._check_grasp(
-                gripper=self.robots[0].gripper,
-                object_geoms=self.nuts[0]
-            )
+            grasped = self._check_grasp(gripper=self.robots[0].gripper, object_geoms=self.nuts[0])
             if grasped:
                 reward = 1.0
-            
-            
+
             task_done = self._check_success()
             if task_done:
                 reward = 2.0
@@ -292,7 +298,6 @@ class NutAssembly(SingleArmEnv):
 
         self.curr_max_rewards = max(self.curr_max_rewards, reward)
         reward = self.curr_max_rewards
-        print(reward)
         return reward
 
     def staged_rewards(self):
@@ -482,6 +487,9 @@ class NutAssembly(SingleArmEnv):
             self.obj_body_id[nut.name] = self.sim.model.body_name2id(nut.root_body)
             self.obj_geom_id[nut.name] = [self.sim.model.geom_name2id(g) for g in nut.contact_geoms]
 
+        self.obj_body_id["peg1"] = self.peg1_body_id
+        self.obj_body_id["peg2"] = self.peg2_body_id
+
         # information of objects
         self.object_site_ids = [self.sim.model.site_name2id(nut.important_sites["handle"]) for nut in self.nuts]
 
@@ -505,6 +513,7 @@ class NutAssembly(SingleArmEnv):
 
             # Reset nut sensor mappings
             self.nut_id_to_sensors = {}
+            self.peg_id_to_sensors = {}
 
             # for conversion to relative gripper frame
             @sensor(modality=modality)
@@ -530,6 +539,13 @@ class NutAssembly(SingleArmEnv):
                 enableds += [using_nut] * 4
                 actives += [using_nut] * 4
                 self.nut_id_to_sensors[i] = nut_sensor_names
+
+                peg_sensors, peg_sensor_names = self._create_nut_sensors(nut_name=f"peg{i + 1}", modality=modality)
+                sensors += peg_sensors
+                names += peg_sensor_names
+                enableds += [using_nut] * 4
+                actives += [using_nut] * 4
+                self.peg_id_to_sensors[i] = peg_sensor_names
 
             if self.single_object_mode == 1:
                 # This is randomly sampled object, so we need to include object id as observation
@@ -636,6 +652,11 @@ class NutAssembly(SingleArmEnv):
         # Make sure to update sensors' active and enabled states
         if self.single_object_mode != 0:
             for i, sensor_names in self.nut_id_to_sensors.items():
+                for name in sensor_names:
+                    # Set all of these sensors to be enabled and active if this is the active nut, else False
+                    self._observables[name].set_enabled(i == self.nut_id)
+                    self._observables[name].set_active(i == self.nut_id)
+            for i, sensor_names in self.peg_id_to_sensors.items():
                 for name in sensor_names:
                     # Set all of these sensors to be enabled and active if this is the active nut, else False
                     self._observables[name].set_enabled(i == self.nut_id)
