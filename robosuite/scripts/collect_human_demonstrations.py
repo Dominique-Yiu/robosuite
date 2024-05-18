@@ -30,7 +30,7 @@ from scipy.spatial.transform import Rotation
 
 
 class EnvRunner:
-    def __init__(self, env, freq=60):
+    def __init__(self, env, freq=30):
         self.env = env
         self.freq = freq
         self.action = None
@@ -81,7 +81,7 @@ def collect_human_trajectory(env, device, arm, env_configuration):
     env_runner = EnvRunner(env)
     step_thread = threading.Thread(target=env_runner.run_step)
     step_thread.start()
-    max_steps = 20 * env_runner.freq
+    max_steps = 100 * env_runner.freq
     global current_timestamps
 
     task_completion_hold_count = -1  # counter to collect 10 timesteps after reaching goal
@@ -116,7 +116,7 @@ def collect_human_trajectory(env, device, arm, env_configuration):
                 break
 
             # state machine to check for having a success for 10 consecutive timesteps
-            if env._check_success():
+            if env.reward() == 1.0:
                 if task_completion_hold_count > 0:
                     task_completion_hold_count -= 1  # latched state, decrement count
                 else:
@@ -293,7 +293,7 @@ if __name__ == "__main__":
         "--controller", type=str, default="OSC_POSE", help="Choice of controller. Can be 'IK_POSE' or 'OSC_POSE'"
     )
     parser.add_argument("--device", type=str, default="keyboard")
-    parser.add_argument("--pos-sensitivity", type=float, default=1.0, help="How much to scale position user inputs")
+    parser.add_argument("--pos-sensitivity", type=float, default=4.0, help="How much to scale position user inputs")
     parser.add_argument("--rot-sensitivity", type=float, default=1.0, help="How much to scale rotation user inputs")
     parser.add_argument("--control_freq", type=int, default=30)
     args = parser.parse_args()

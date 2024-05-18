@@ -209,6 +209,7 @@ class NutAssembly(SingleArmEnv):
 
         # object placement initializer
         self.placement_initializer = placement_initializer
+        self.curr_max_rewards = 0.0
 
         super().__init__(
             robots=robots,
@@ -265,17 +266,33 @@ class NutAssembly(SingleArmEnv):
             float: reward value
         """
         # compute sparse rewards
-        self._check_success()
-        reward = np.sum(self.objects_on_pegs)
+        reward = 0.0
 
-        # add in shaped rewards
-        if self.reward_shaping:
-            staged_rewards = self.staged_rewards()
-            reward += max(staged_rewards)
+        # TODO: mode == 0
+        if self.single_object_mode == 0:
+            pass
+        else:
+            grasped = self._check_grasp(
+                gripper=self.robots[0].gripper,
+                object_geoms=self.nuts[0]
+            )
+            if grasped:
+                reward = 1.0
+            
+            
+            task_done = self._check_success()
+            if task_done:
+                reward = 2.0
+
+            reward = reward / 2.0
         if self.reward_scale is not None:
             reward *= self.reward_scale
             if self.single_object_mode == 0:
                 reward /= 2.0
+
+        self.curr_max_rewards = max(self.curr_max_rewards, reward)
+        reward = self.curr_max_rewards
+        print(reward)
         return reward
 
     def staged_rewards(self):
@@ -591,6 +608,7 @@ class NutAssembly(SingleArmEnv):
         """
         super()._reset_internal()
 
+        self.curr_max_rewards = 0.0
         # Reset all object positions using initializer sampler if we're not directly loading from an xml
         if not self.deterministic_reset:
 
