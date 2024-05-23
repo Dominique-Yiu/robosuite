@@ -179,6 +179,7 @@ class Stack(SingleArmEnv):
 
         # object placement initializer
         self.placement_initializer = placement_initializer
+        self.curr_max_rewards = 0.0
 
         super().__init__(
             robots=robots,
@@ -240,14 +241,28 @@ class Stack(SingleArmEnv):
         Returns:
             float: reward value
         """
-        r_reach, r_lift, r_stack = self.staged_rewards()
-        if self.reward_shaping:
-            reward = max(r_reach, r_lift, r_stack)
-        else:
-            reward = 2.0 if r_stack > 0 else 0.0
+        reward = 0.0
 
-        if self.reward_scale is not None:
-            reward *= self.reward_scale / 2.0
+        grasping_cubeA = self._check_grasp(gripper=self.robots[0].gripper, object_geoms=self.cubeA)
+
+        # lifting is successful when the cube is above the table top by a margin
+        cubeA_pos = self.sim.data.body_xpos[self.cubeA_body_id]
+        cubeA_height = cubeA_pos[2]
+        table_height = self.table_offset[2]
+        cubeA_lifted = cubeA_height > table_height + 0.04
+        r_lift = 1.0 if cubeA_lifted else 0.0
+
+        cubeA_touching_cubeB = self.check_contact(self.cubeA, self.cubeB)
+
+        if grasping_cubeA:
+            reward = 1.0
+        if not grasping_cubeA and r_lift > 0 and cubeA_touching_cubeB:
+            reward = 2.0
+
+        reward = reward / 2.0
+
+        self.curr_max_rewards = max(self.curr_max_rewards, reward)
+        reward = self.curr_max_rewards
 
         return reward
 
@@ -393,6 +408,7 @@ class Stack(SingleArmEnv):
         """
         super()._reset_internal()
 
+        self.curr_max_rewards = 0.0
         # Reset all object positions using initializer sampler if we're not directly loading from an xml
         if not self.deterministic_reset:
 
